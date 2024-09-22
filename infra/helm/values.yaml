@@ -11,7 +11,7 @@ app:
     registry: "ghcr.io/msamec/msamec"
     repository: "showcase"
     pullPolicy: IfNotPresent
-    tag: "v0.1.0"
+    tag: "v0.1.1"
     ghcrSecretName: "ghcr-secret"
 service:
   type: ClusterIP
