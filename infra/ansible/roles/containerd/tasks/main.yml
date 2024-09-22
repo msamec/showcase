@@ -1,0 +1,11 @@
+---
+- name: Check if containerd is running
+  systemd_service:
+    name: containerd
+    state: started
+  ignore_errors: true
+  register: containerd_check
+
+- name: Install containerd
+  import_tasks: install-containerd.yml
+  when: containerd_check.failed == true

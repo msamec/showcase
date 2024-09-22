@@ -1,0 +1,132 @@
+global:
+  defaultStorageClass: local-path
+
+production: {{ keycloak_production }}
+proxyHeaders: xforwarded
+
+postgresl:
+  auth:
+    password: {{ keycloak_db_password }}
+
+auth:
+  adminUser: {{ keycloak_admin_user }}
+  adminPassword: {{ keycloak_admin_password }}
+
+ingress:
+  enabled: true
+  hostname: {{ keycloak_url }}
+  annotations:
+    cert-manager.io/cluster-issuer: showcase
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  ingressClassName: "nginx"
+  tls: true
+  extraPaths:
+    - path: /
+      pathType: Prefix
+      backend:
+        service:
+          name: keycloak
+          port:
+              name: http
+  extraTls:
+    - secretName: keycloak-server-tls-secret
+      hosts:
+        - {{ keycloak_url }}
+
+keycloakConfigCli:
+  enabled: true
+  extraEnvVars:
+    - name: KEYCLOAK_AVAILABILITYCHECK_TIMEOUT
+      value: "300s"
+  configuration:
+    master-realm.json: |
+      {
+        "realm": "master",
+        "enabled": true,
+        "clients": [
+          {
+            "clientId": "{{ keycloak_client_id }}",
+            "name": "ArgoCD Client",
+            "secret": "{{ keycloak_client_secret }}",
+            "enabled": true,
+            "redirectUris": ["https://{{ argocd_url }}/auth/callback", "https://{{ argocd_url }}"],
+            "webOrigins": ["https://{{ argocd_url }}"],
+            "publicClient": false,
+            "protocol": "openid-connect",
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": true,
+            "attributes": {
+              "post.logout.redirect.uri": "/"
+            },
+            "defaultClientScopes": [
+              "groups", "basic", "email", "profile"
+            ]
+          }
+        ],
+        "clientScopes": [
+           {
+             "name": "groups",
+             "protocol": "openid-connect",
+             "attributes": {
+               "include.in.token.scope": "true",
+               "display.on.consent.screen": "true"
+             },
+             "protocolMappers": [
+               {
+                 "name": "groups",
+                 "protocol": "openid-connect",
+                 "protocolMapper": "oidc-group-membership-mapper",
+                 "consentRequired": false,
+                 "config": {
+                   "userinfo.token.claim": "true",
+                   "id.token.claim": "true",
+                   "access.token.claim": "true",
+                   "claim.name": "groups"
+                 }
+               }
+             ]
+           }
+        ],
+        "groups": [
+          {
+            "name": "{{ keycloak_admin_group }}"
+          },
+          {
+            "name": "{{ keycloak_public_group }}"
+          }
+        ],
+        "users": [
+          {
+            "username": "{{ keycloak_argocd_admin_user }}",
+            "enabled": "true",
+            "firstName": "Admin",
+            "lastName": "User",
+            "credentials": [
+              {
+                "type": "password",
+                "value": "{{ keycloak_argocd_admin_password }}"
+              }
+            ],
+            "groups": [
+              "/{{ keycloak_admin_group }}"
+            ]
+          },
+          {
+            "username": "{{ keycloak_argocd_public_user_username }}",
+            "enabled": "true",
+            "firstName": "Public",
+            "lastName": "User",
+            "credentials": [
+              {
+                "type": "password",
+                "value": "{{ keycloak_argocd_public_user_password }}"
+              }
+            ],
+            "groups": [
+              "/{{ keycloak_public_group }}"
+            ]
+          }
+        ]
+      }

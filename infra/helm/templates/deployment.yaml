@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "showcase.fullname" . }}
+  labels: 
+    {{- include "showcase.labels" . | nindent 4}}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "showcase.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "showcase.selectorLabels" . | nindent 8 }}
+    spec:
+      imagePullSecrets: 
+        - name: {{ .Values.app.image.ghcrSecretName }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.app.image.registry }}/{{ .Values.app.image.repository }}:{{ .Values.app.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.app.image.pullPolicy }}       
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        ports:
+        - containerPort: 3000
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "showcase.fullname" . }}
+              key: githubToken
+        - name: GITHUB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "showcase.fullname" . }}
+              key: githubUsername
+        - name: GITHUB_REPO
+          valueFrom:
+            configMapKeyRef:
+              name: {{ include "showcase.fullname" . }}
+              key: githubRepo

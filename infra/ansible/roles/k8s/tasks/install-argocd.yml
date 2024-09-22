@@ -1,0 +1,75 @@
+---
+- name: Check if ArgoCD is running
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod  
+    namespace: "{{ argocd_namespace }}"
+  register: argocd_resources
+
+- name: Install ArgoCD
+  when: argocd_resources.resources | length <= 0
+  block:
+    - name: Add argocd chart repo
+      kubernetes.core.helm_repository:
+        name: argo
+        repo_url: "https://argoproj.github.io/argo-helm" 
+
+    - name: create /tmp/argocd-values.yml
+      template:
+        src: argocd-values.yml.j2
+        dest: /tmp/argocd-values.yml
+
+    - name: Install argocd
+      kubernetes.core.helm:
+        name: argocd
+        chart_ref: argo/argo-cd
+        wait: true
+        release_namespace: "{{ argocd_namespace }}"
+        create_namespace: true
+        values_files:
+          - /tmp/argocd-values.yml 
+
+    - name: Base64 encode the keycloack client secret
+      set_fact:
+        encoded_keycloak_client_secret: "{{ keycloak_client_secret | b64encode }}"
+
+    - name: Update argocd-secret
+      kubernetes.core.k8s:
+        state: present
+        kind: Secret
+        namespace: argocd
+        name: argocd-secret
+        definition:
+          data: 
+            oidc.keycloak.clientSecret: "{{ encoded_keycloak_client_secret }}"
+
+    - name: Update argocd-cm
+      kubernetes.core.k8s:
+        state: present
+        kind: ConfigMap
+        namespace: argocd
+        name: argocd-cm
+        definition:
+          data:
+            oidc.config: |
+              name: Keycloak
+              issuer: https://{{ keycloak_url }}/realms/master
+              clientID: {{ keycloak_client_id }}
+              clientSecret: $oidc.keycloak.clientSecret
+              requestedScopes: ["openid", "profile", "email", "groups"]
+              logoutURL: https://{{ keycloak_client_id }}/realms/master/protocol/openid-connect/logout
+
+    - name: Update argocd-rbac-cm
+      kubernetes.core.k8s:
+        state: present
+        kind: ConfigMap
+        namespace: argocd
+        name: argocd-rbac-cm
+        definition:
+          data:
+            policy.csv: |
+              p, role:public, applications, get, default/showcase, allow
+              p, role:public, logs, get, */*, deny
+              g, {{ keycloak_admin_group }}, role:admin
+              g, {{ keycloak_public_group }}, role:public
+            policy.defaut: role:''

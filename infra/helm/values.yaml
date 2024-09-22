@@ -1,0 +1,34 @@
+nameOverride: ""
+fullnameOverride: ""
+environment: "prod"
+replicaCount: 1
+resources:
+  requests:
+    cpu: "300m"
+    memory: "256Mi"
+app:
+  image:
+    registry: "ghcr.io/msamec/msamec"
+    repository: "showcase"
+    pullPolicy: IfNotPresent
+    tag: "v0.2.1"
+    ghcrSecretName: "ghcr-secret"
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+ingress:
+  className: alb
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  hosts:
+    - host: showcase.samec.dev
+      paths:
+        - path: /
+          pathType: Prefix
+secrets:
+  dockerConfigJson:
+letsEncrypt:
+  clusterIssuer: showcase
+  secretName: showcase-tls

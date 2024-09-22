@@ -1,0 +1,32 @@
+---
+- name: Check if metallb is running
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod  
+    namespace: "{{ metallb_namespace }}"
+  register: metallb_resources
+
+- name: Install metallb
+  when: metallb_resources.resources | length <= 0
+  block:
+    - name: Add metallb chart repo
+      kubernetes.core.helm_repository:
+        name: metallb
+        repo_url: "https://metallb.github.io/metallb"
+
+    - name: Install metallb
+      kubernetes.core.helm:
+        name: metallb
+        chart_ref: metallb/metallb
+        wait: true
+        release_namespace: "{{ metallb_namespace }}"
+        create_namespace: true
+
+    - name: Configure ip-pool.yml file
+      template:
+        src: ip-pool.yml.j2
+        dest: /tmp/ip-pool.yml
+
+    - name: Install IPAddressPool and L2Advertisement
+      shell: kubectl apply -f /tmp/ip-pool.yml -n {{ metallb_namespace }}
+

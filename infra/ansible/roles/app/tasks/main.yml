@@ -1,0 +1,40 @@
+---
+- name: Deploy app
+  block:
+    - name: Change k8s namespace to argocd
+      shell: "kubectl config set-context --current --namespace={{ argocd_namespace }}"
+
+    - name: Copy ssh private key
+      copy:
+        src: id_rsa
+        dest: /tmp/id_rsa
+    
+    - name: Install argocd CLI
+      get_url:
+        url: https://github.com/argoproj/argo-cd/releases/download/v{{ argocd_cli_version }}/argocd-linux-amd64
+        dest: "{{ argocd_cli_path }}"
+        mode: 0755
+
+    - name: Log into ArgoCD with CLI
+      shell: argocd login --core
+
+    - name: Add project repo
+      shell: "argocd repo add {{ git_repo }} --insecure-ignore-host-key --ssh-private-key-path /tmp/id_rsa"
+
+    - name: Create application
+      shell: >
+        argocd app create showcase 
+        --upsert
+        --repo {{ git_repo }} 
+        --path infra/helm 
+        --dest-namespace default 
+        --dest-server https://kubernetes.default.svc 
+        --helm-set secrets.dockerConfigJson={{ lookup('env', 'DOCKER_CONFIG') }}
+        --sync-policy auto
+        --sync-option timeout.reconciliation=30
+        --auto-prune
+        --self-heal
+
+  always:
+    - name: Change k8s namespace to default
+      shell: kubectl config set-context --current --namespace=default

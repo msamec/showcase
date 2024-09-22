@@ -1,0 +1,31 @@
+---
+- name: Check if ingress nginx is running
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod  
+    namespace: "{{ ingress_nginx_namespace }}"
+  register: ingress_nginx_resources
+
+- name: Install cert-manager
+  when: ingress_nginx_resources.resources | length <= 0
+  block:
+    - name: Add ingress-nginx chart repo
+      kubernetes.core.helm_repository:
+        name: ingress-nginx
+        repo_url: "https://kubernetes.github.io/ingress-nginx"
+
+    - name: create /tmp/nginx-values.yml
+      copy:
+        src: nginx-values.yml
+        dest: /tmp/nginx-values.yml
+
+    - name: Install ingress-nginx
+      kubernetes.core.helm:
+        name: ingress-nginx
+        chart_ref: ingress-nginx/ingress-nginx
+        release_namespace: "{{ ingress_nginx_namespace }}"
+        create_namespace: true
+        values_files:
+          - /tmp/nginx-values.yml
+
+

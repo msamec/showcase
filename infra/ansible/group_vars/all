@@ -1,0 +1,35 @@
+---
+server_ip_address: 116.203.213.57/32
+pod_network_cidr: 10.244.0.0/16
+
+acme_server: https://acme-v02.api.letsencrypt.org/directory
+acme_email: marko@samec.dev
+
+ingress_nginx_namespace: ingress-nginx
+
+metallb_namespace: metallb-system
+
+cert_manager_namespace: cert-manager
+
+argocd_cli_version: 2.12.3
+argocd_cli_path: /usr/local/bin/argocd
+argocd_url: argocd.samec.dev
+argocd_namespace: argocd
+argocd_initial_password_object: argocd-initial-admin-secret
+
+keycloak_namespace: auth
+keycloak_production: false
+keycloak_url: keycloak.samec.dev
+keycloak_db_password: "{{ lookup('env', 'KEYCLOAK_DB_PASSWORD') | mandatory }}"
+keycloak_client_id: argocd
+keycloak_client_secret: "{{ lookup('env', 'KEYCLOAK_CLIENT_SECRET') | mandatory }}"
+keycloak_admin_user: admin
+keycloak_admin_password: "{{ lookup('env', 'KEYCLOAK_ADMIN_PASSWORD') | mandatory }}"
+keycloak_argocd_admin_user: argocdadmin
+keycloak_argocd_admin_password: "{{ lookup('env', 'KEYCLOAK_ARGOCD_ADMIN_USER_PASSWORD') | mandatory }}"
+keycloak_argocd_public_user_username: argocdpublic
+keycloak_argocd_public_user_password: "{{ lookup('env', 'KEYCLOAK_ARGOCD_PUBLIC_USER_PASSWORD') | mandatory }}"
+keycloak_admin_group: ArgoCDAdmin
+keycloak_public_group: ArgoCDPublic
+
+git_repo: git@github.com:msamec/showcase.git

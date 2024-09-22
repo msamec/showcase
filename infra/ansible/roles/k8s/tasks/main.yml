@@ -1,0 +1,40 @@
+---
+- name: Install k8s
+  import_tasks: install-k8s.yml
+  tags: 
+    - install-k8s
+
+- name: Configure k8s
+  import_tasks: configure-k8s.yml
+  tags: 
+    - create-cluster
+
+- name: Install Ingress Nginx
+  import_tasks: install-ingress-nginx.yml
+  tags: 
+    - install-ingress-nginx
+
+- name: Install MetalLB
+  import_tasks: install-metallb.yml
+  tags: 
+    - install-metallb
+
+- name: Install cert-manager
+  import_tasks: install-cert-manager.yml
+  tags: 
+    - install-cert-manager
+
+- name: Install keycloak
+  import_tasks: install-keycloak.yml
+  tags: 
+    - install-keycloak
+
+- name: Install ArgoCD
+  import_tasks: install-argocd.yml
+  tags: 
+    - install-argo-cd
+
+- name: Install sealed secrets
+  import_tasks: install-sealed-secrets.yml
+  tags: 
+    - install-sealed-secrets

@@ -1,0 +1,28 @@
+global:
+  domain: {{ argocd_url }}
+
+configs:
+  cm:
+    admin.enabled: false
+
+server:
+  ingress:
+    enabled: true
+    annotations: 
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      cert-manager.io/cluster-issuer: showcase
+    ingressClassName: "nginx"
+    tls: true
+    extraPaths: 
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              name: https
+    extraTls: 
+      - secretName: argocd-server-tls-secret
+        hosts:
+          - {{ argocd_url }}

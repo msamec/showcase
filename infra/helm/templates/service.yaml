@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "showcase.fullname" . }}
+  labels: 
+    {{- include "showcase.labels" . | nindent 4}}
+spec:
+  selector:
+    {{- include "showcase.selectorLabels" . | nindent 6 }}
+  type: {{ .Values.service.type }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
