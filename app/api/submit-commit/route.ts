@@ -46,9 +46,9 @@ export async function POST(req: Request) {
     const currentTime = new Date();
     const timeDifference = (currentTime.getTime() - lastCommitDate.getTime()) / 1000;
 
-    if (timeDifference < 300) {
+    if (timeDifference < 120) {
       return NextResponse.json(
-        { message: 'Error: You cannot commit more then once every 5 minutes.' },
+        { message: 'Error: You cannot commit more then once every 2 minutes.' },
         { status: 400 }
       );
     }
