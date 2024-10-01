@@ -1,3 +1,12 @@
+# [0.2.0](https://github.com/msamec/showcase/compare/v0.1.3...v0.2.0) (2024-10-01)
+
+
+### Features
+
+* add prometheus and grafana ([c5c43e5](https://github.com/msamec/showcase/commit/c5c43e5cdc3740dad379d5702b2b005596217118))
+
+
+
 ## [0.1.3](https://github.com/msamec/showcase/compare/v0.1.2...v0.1.3) (2024-09-27)
 
 
