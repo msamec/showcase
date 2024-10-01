@@ -31,7 +31,7 @@
 
     - name: Base64 encode the keycloack client secret
       set_fact:
-        encoded_keycloak_client_secret: "{{ keycloak_client_secret | b64encode }}"
+        encoded_keycloak_client_secret: "{{ keycloak_argocd_client_secret | b64encode }}"
 
     - name: Update argocd-secret
       kubernetes.core.k8s:
@@ -54,7 +54,7 @@
             oidc.config: |
               name: Keycloak
               issuer: https://{{ keycloak_url }}/realms/master
-              clientID: {{ keycloak_client_id }}
+              clientID: {{ keycloak_argocd_client_id }}
               clientSecret: $oidc.keycloak.clientSecret
               requestedScopes: ["openid", "profile", "email", "groups"]
               logoutURL: https://{{ keycloak_client_id }}/realms/master/protocol/openid-connect/logout

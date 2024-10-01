@@ -1,0 +1,68 @@
+adminUser: {{ grafana_admin_user }}
+adminPassword: {{ grafana_admin_password }}
+assertNoLeakedSecrets: false
+persistence:
+  enabled: true
+  storageClassName: local-path
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: showcase
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  ingressClassName: "nginx"
+  hosts:
+    - {{ grafana_url }}
+  tls:
+    - secretName: grafana-server-tls-secret
+      hosts:
+        - {{ grafana_url }}
+
+grafana.ini:
+  auth:
+    disable_login_form: true
+  server:
+    root_url: https://{{ grafana_url }}
+  auth.generic_oauth:
+    enabled: true
+    name: Keycloak-OAuth
+    allow_sign_up: true
+    client_id: {{ keycloak_grafana_client_id }}
+    client_secret: {{ keycloak_grafana_client_secret }}
+    scopes: openid,email,profile,offline_access,roles
+    email_attribute_path: email
+    login_attribute_path: username
+    name_attribute_path: full_name
+    auth_url: https://{{ keycloak_url }}/realms/master/protocol/openid-connect/auth
+    token_url: https://{{ keycloak_url }}/realms/master/protocol/openid-connect/token
+    api_url: https://{{ keycloak_url }}/realms/master/protocol/openid-connect/userinfo
+    signout_redirect_url: https://{{ keycloak_url }}/realms/master/protocol/openid-connect/logout
+    role_attribute_path: contains(groups[*], '{{ keycloak_admin_group }}') && 'Admin' || 'Viewer'    
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+
+dashboardsConfigMaps:
+  default: "grafana-dashboards"
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://{{ prometheus_url }}
+        basicAuth: true
+        basicAuthUser: {{ prometheus_basic_auth_user }}
+        secureJsonData:
+          basicAuthPassword: {{ prometheus_basic_auth_password }}

@@ -6,7 +6,7 @@
     namespace: "{{ ingress_nginx_namespace }}"
   register: ingress_nginx_resources
 
-- name: Install cert-manager
+- name: Install Nginx Ingress
   when: ingress_nginx_resources.resources | length <= 0
   block:
     - name: Add ingress-nginx chart repo
@@ -15,8 +15,8 @@
         repo_url: "https://kubernetes.github.io/ingress-nginx"
 
     - name: create /tmp/nginx-values.yml
-      copy:
-        src: nginx-values.yml
+      template:
+        src: nginx-values.yml.j2
         dest: /tmp/nginx-values.yml
 
     - name: Install ingress-nginx

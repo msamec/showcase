@@ -1,0 +1,28 @@
+alertmanager:
+  enabled: false
+
+server:
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: showcase
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    ingressClassName: "nginx"
+    hosts:
+      - {{ prometheus_url }}
+    tls:
+      - secretName: prometheus-server-tls-secret
+        hosts:
+          - {{ prometheus_url }}
+  probeHeaders:
+    - name: Authorization
+      value: Basic {{ basic_auth_encoded }}
+  persistentVolume:
+    storageClass: local-path
+  extraArgs:
+    web.config.file: /etc/config/web.config.yml
+
+serverFiles:
+  web.config.yml:
+    basic_auth_users:
+      {{ prometheus_basic_auth_user }}: '{{ hashed_password.stdout }}'

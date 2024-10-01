@@ -43,8 +43,9 @@
       - libffi-dev 
       - gcc 
       - libssl-dev
+      - apache2-utils
 
-- name: Install bottle python package
+- name: Install python package
   pip:
     name:
       - kubernetes

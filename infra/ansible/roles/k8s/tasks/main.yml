@@ -38,3 +38,13 @@
   import_tasks: install-sealed-secrets.yml
   tags: 
     - install-sealed-secrets
+
+- name: Install Prometheus
+  import_tasks: install-prometheus.yml
+  tags: 
+    - install-prometheus
+
+- name: Install Grafana
+  import_tasks: install-grafana.yml
+  tags: 
+    - install-grafana
