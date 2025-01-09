@@ -1,0 +1,57 @@
+---
+server_ip_address: 188.245.96.167/32
+pod_network_cidr: 10.244.0.0/16
+
+acme_server: https://acme-v02.api.letsencrypt.org/directory
+acme_email: "{{ lookup('env', 'ACME_EMAIL') | mandatory }}"
+
+ingress_nginx_namespace: ingress-nginx
+
+metallb_namespace: metallb-system
+
+cert_manager_namespace: cert-manager
+
+monitoring_namespace: monitoring
+
+jenkins_namespace: jenkins
+
+argocd_cli_version: 2.12.3
+argocd_cli_path: /usr/local/bin/argocd
+argocd_url: argocd.samec.dev
+argocd_namespace: argocd
+argocd_initial_password_object: argocd-initial-admin-secret
+
+jenkins_url: jenkins.samec.dev
+
+keycloak_namespace: auth
+keycloak_production: false
+keycloak_url: keycloak.samec.dev
+keycloak_db_password: "{{ lookup('env', 'KEYCLOAK_DB_PASSWORD') | mandatory }}"
+keycloak_argocd_client_id: argocd
+keycloak_argocd_client_secret: "{{ lookup('env', 'KEYCLOAK_ARGOCD_CLIENT_SECRET') | mandatory }}"
+keycloak_jenkins_client_id: jenkins
+keycloak_jenkins_client_secret: "{{ lookup('env', 'KEYCLOAK_JENKINS_CLIENT_SECRET') | mandatory }}"
+keycloak_grafana_client_id: grafana
+keycloak_grafana_client_secret: "{{ lookup('env', 'KEYCLOAK_GRAFANA_CLIENT_SECRET') | mandatory }}"
+keycloak_admin_user: kadmin
+keycloak_admin_password: "{{ lookup('env', 'KEYCLOAK_ADMIN_PASSWORD') | mandatory }}"
+keycloak_admin_role: AdminRole
+keycloak_public_role: PublicRole
+keycloak_admin_group: Admin
+keycloak_public_group: Public
+
+prometheus_url: prometheus.samec.dev
+prometheus_basic_auth_user: "{{ lookup('env', 'PROMETHEUS_BASIC_AUTH_USER') | mandatory }}"
+prometheus_basic_auth_password: "{{ lookup('env', 'PROMETHEUS_BASIC_AUTH_PASSWORD') | mandatory }}"
+
+grafana_url: grafana.samec.dev
+grafana_admin_user: admin
+grafana_admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') | mandatory }}"
+
+git_repo: git@github.com:msamec/showcase.git
+
+admin_user: admin
+admin_password: "{{ lookup('env', 'ADMIN_USER_PASSWORD') | mandatory }}"
+public_user_username: public
+public_user_password: "{{ lookup('env', 'PUBLIC_USER_PASSWORD') | mandatory }}"
+

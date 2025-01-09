@@ -1,0 +1,58 @@
+---
+persistence:
+  enabled: true
+  storageClass: local-path
+controller:
+  JCasC:
+    configScripts:
+      security: |-
+        jenkins: 
+          securityRealm: 
+            oic:
+              clientId: "{{ keycloak_jenkins_client_id }}"
+              clientSecret: "{{ keycloak_jenkins_client_secret }}"
+              userNameField: "preferred_username"
+              groupsFieldName: "groups"
+              fullNameFieldName: "preferred_username"
+              serverConfiguration: 
+                wellKnown:
+                  scopesOverride: "openid profile email groups roles"
+                  wellKnownOpenIDConfigurationUrl: "https://{{ keycloak_url }}/realms/master/.well-known/openid-configuration"
+          authorizationStrategy:
+            globalMatrix:
+              entries:
+                - group:
+                    name: "{{ keycloak_admin_group }}"
+                    permissions:
+                      - Overall/Administer
+                - group:
+                    name: "{{ keycloak_public_group }}"
+                    permissions:
+                      - Overall/Read
+
+  ingress:
+    enabled: true
+    annotations: 
+      cert-manager.io/cluster-issuer: showcase
+    ingressClassName: nginx
+    hostName: {{ jenkins_url }}
+    tls:
+      - hosts:
+          - {{ jenkins_url }}
+        secretName: "jenkins-server-tls-secret"
+  installPlugins:
+    - kubernetes:4295.v7fa_01b_309c95
+    - workflow-aggregator:600.vb_57cdd26fdd7
+    - git:5.6.0
+    - configuration-as-code:1887.v9e47623cb_043
+    - github-oauth:621.v33b_4394dda_4d
+    - blueocean:1.27.16
+    - matrix-auth:3.2.3
+    - oic-auth:4.444.vd4c54f157201
+    - github:1.40.0
+
+serviceAccount:
+  create: false
+  name: jenkins
+  annotations: {}
+  

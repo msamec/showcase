@@ -1,0 +1,34 @@
+---
+- name: check and install prerequisite
+  hosts: server
+  remote_user: root
+  tags: 
+    - install
+  roles:
+    - prerequisite
+
+- name: install containerd
+  hosts: server
+  remote_user: root
+  tags: 
+    - install
+  roles:
+    - containerd
+
+- name: install k8s
+  hosts: server
+  remote_user: root
+  tags: 
+    - install
+    - create-cluster
+  roles:
+    - k8s
+
+- name: deploy app
+  hosts: server
+  remote_user: root
+  tags: 
+    - deploy-app
+  roles:
+    - app
+

@@ -1,0 +1,20 @@
+---
+- name: Install Grafana
+  block:
+    - name: Add grafana chart repo
+      kubernetes.core.helm_repository:
+        name: grafana
+        repo_url: "https://grafana.github.io/helm-charts"
+
+    - name: Create ConfigMap for Grafana dashboard
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('file', 'grafana-dashboard-configmap.yml') }}"
+
+    - name: Install grafana
+      kubernetes.core.helm:
+        name: grafana
+        chart_ref: grafana/grafana
+        release_namespace: "{{ monitoring_namespace }}"
+        create_namespace: true
+        values: "{{ lookup('template', 'grafana-values.yml.j2') | from_yaml }}"

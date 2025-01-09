@@ -1,0 +1,15 @@
+---
+- name: Install keycloak
+  block:
+    - name: Add bitnami chart repo
+      kubernetes.core.helm_repository:
+        name: bitnami
+        repo_url: "https://charts.bitnami.com/bitnami"
+
+    - name: Install keycloak
+      kubernetes.core.helm:
+        name: keycloak
+        chart_ref: bitnami/keycloak
+        release_namespace: "{{ keycloak_namespace }}"
+        create_namespace: true
+        values: "{{ lookup('template', 'keycloak-values.yml.j2') | from_yaml }}"

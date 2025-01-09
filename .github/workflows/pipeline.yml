@@ -1,0 +1,114 @@
+name: Test, lint, format, bump, build, deploy
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  packages: write
+  contents: write
+
+jobs:
+  test-lint-format:
+    name: Test/lint/format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: 'npm'
+          node-version: 'lts/Iron'
+      - name: Install Dependencies
+        if: ${{ steps.cache-nodemodules.outputs.cache-hit != 'true' }}
+        run: npm ci
+      - name: Test
+        run: npm run test
+      - name: Lint
+        run: npm run lint
+      - name: Formatter
+        continue-on-error: true
+        run: npm run formatter
+
+  tag:
+    name: Create new tag using conventional commits
+    runs-on: ubuntu-latest
+    needs: [test-lint-format]
+    timeout-minutes: 10
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Conventional Changelog Action
+        uses: TriPSs/conventional-changelog-action@v5
+        with:
+          github-token: ${{ secrets.github_token }}
+          git-user-name: 'GitHub Actions'
+          git-user-email: 'actions@github.com'
+          skip-on-empty: 'false'
+
+  build-image:
+    name: Build and push docker image
+    runs-on: ubuntu-latest
+    needs: [tag]
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get previous tag
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.previoustag.outputs.tag }}
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+      - name: 'Build image'
+        run: |
+          docker build . --tag ghcr.io/$GITHUB_REPOSITORY_OWNER/$GITHUB_REPOSITORY:${{ steps.previoustag.outputs.tag }}
+          docker push ghcr.io/$GITHUB_REPOSITORY_OWNER/$GITHUB_REPOSITORY:${{ steps.previoustag.outputs.tag }}
+      - name: Set output value
+        id: set_version
+        run: echo "version=${{ steps.previoustag.outputs.tag }}" >> $GITHUB_OUTPUT
+
+  update-helm-tag:
+    name: Update Helm value.yml to trigger ArgoCD automatic deployment
+    needs: [build-image]
+    runs-on:
+      ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Update app.image.tag in values.yml
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -i '.app.image.tag = "${{ needs.build-image.outputs.version }}"' 'infra/helm/values.yaml'
+      - name: Commit changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add infra/helm/values.yaml
+          git commit -m "chore: update tag in YAML file to ${{needs.build-image.outputs.version}} [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

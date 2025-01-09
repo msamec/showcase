@@ -1,0 +1,33 @@
+---
+- name: Create k8s cluster
+  tags: 
+    - create-cluster
+  block:
+    - name: Get cluster info
+      command: kubectl cluster-info
+      register: existing_cluster_running_check
+      ignore_errors: true
+
+    - name: Initialize Kubernetes cluster
+      command: kubeadm init --pod-network-cidr="{{ pod_network_cidr }}" --cri-socket unix:///var/run/containerd/containerd.sock
+      when: existing_cluster_running_check.rc != 0
+
+    - name: Set up kubectl for the current user
+      command: "{{ item }}"
+      with_items:
+        - "mkdir -p $HOME/.kube"
+        - "cp /etc/kubernetes/admin.conf $HOME/.kube/config"
+
+    - name: Remove taint
+      kubernetes.core.k8s_taint:
+        state: absent
+        name: "{{ ansible_hostname }}"
+        taints:
+          - key: "node-role.kubernetes.io/control-plane"
+            effect: "NoSchedule"
+
+    - name: Install CNI plugin
+      shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+    - name: Install Rancher local-path provisioner
+      shell: kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.29/deploy/local-path-storage.yaml

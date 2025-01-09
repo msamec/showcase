@@ -1,0 +1,63 @@
+---
+- name: Install ArgoCD
+  block:
+    - name: Add argocd chart repo
+      kubernetes.core.helm_repository:
+        name: argo
+        repo_url: "https://argoproj.github.io/argo-helm" 
+
+    - name: Install argocd
+      kubernetes.core.helm:
+        name: argocd
+        chart_ref: argo/argo-cd
+        wait: true
+        release_namespace: "{{ argocd_namespace }}"
+        create_namespace: true
+        values: "{{ lookup('template', 'argocd-values.yml.j2') | from_yaml }}"
+
+    - name: Base64 encode the keycloack client secret
+      set_fact:
+        encoded_keycloak_client_secret: "{{ keycloak_argocd_client_secret | b64encode }}"
+
+    - name: Update argocd-secret
+      kubernetes.core.k8s:
+        state: present
+        kind: Secret
+        namespace: argocd
+        name: argocd-secret
+        definition:
+          data: 
+            oidc.keycloak.clientSecret: "{{ encoded_keycloak_client_secret }}"
+
+    - name: Update argocd-cm
+      kubernetes.core.k8s:
+        state: present
+        kind: ConfigMap
+        namespace: argocd
+        name: argocd-cm
+        definition:
+          data:
+            # lets skip it, I will trust self-singed certificate here
+            oidc.tls.insecure.skip.verify: "true"
+            oidc.config: |
+              name: Keycloak
+              issuer: https://{{ keycloak_url }}/realms/master
+              clientID: {{ keycloak_argocd_client_id }}
+              clientSecret: $oidc.keycloak.clientSecret
+              requestedScopes: ["openid", "email", "profile", "offline_access", "roles", "groups"]
+              logoutURL: https://{{ keycloak_url }}/realms/master/protocol/openid-connect/logout
+
+    - name: Update argocd-rbac-cm
+      kubernetes.core.k8s:
+        state: present
+        kind: ConfigMap
+        namespace: argocd
+        name: argocd-rbac-cm
+        definition:
+          data:
+            policy.csv: |
+              p, role:public, applications, get, default/showcase, allow
+              p, role:public, logs, get, */*, deny
+              g, {{ keycloak_admin_group }}, role:admin
+              g, {{ keycloak_public_group }}, role:public
+            policy.defaut: role:''
