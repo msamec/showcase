@@ -1,11 +1,57 @@
 ---
+agent:
+  podTemplates:
+    node: |
+      - name: "nodejs"
+        namespace: "{{ jenkins_namespace }}"
+        label: "nodejs"
+        serviceAccount: vault-serviceaccount
+        inheritFrom: "default"
+        annotations:
+        - key: "vault.hashicorp.com/agent-inject"
+          value: "true"
+        - key: "vault.hashicorp.com/agent-inject-status"
+          value: "update"
+        - key: "vault.hashicorp.com/role"
+          value: "jenkins"
+        - key: "vault.hashicorp.com/agent-inject-secret-dockerconfig"
+          value: "secret/data/docker/config"
+        - key: "vault.hashicorp.com/agent-inject-file-dockerconfig"
+          value: "config.json"
+        - key: "vault.hashicorp.com/agent-inject-template-dockerconfig"
+          value: '{% raw %}{{ "{{" }}- with secret "secret/data/docker/config" -}} {"auths": {"ghcr.io": {"auth": "{{ "{{" }} .Data.data.auth {{ "}}" }}"} } } {{ "{{" }}- end }}{% endraw %}'
+        containers:
+        - name: "nodejs-22"
+          image: "node:22-bullseye"
+          command: "sleep"
+          args: "9999999"
+          ttyEnabled: true
+        - name: "build"
+          image: "gcr.io/kaniko-project/executor:debug" 
+          command: "sleep"
+          args: "999999"       
+        volumes:
+        - emptyDirVolume:
+            memory: true
+            mountPath: "/kaniko/.docker"
+                
 persistence:
   enabled: true
   storageClass: local-path
 controller:
   JCasC:
     configScripts:
-      security: |-
+      config: |
+        unclassified:
+          scmGit:
+            globalConfigEmail: jenkins@github.com 
+            globalConfigName: Jenkins
+          globalTimeOutConfiguration: 
+            operations: 
+              - abortOperation 
+            strategy: 
+              absoluteTimeOutStrategy:
+                timeoutMinutes: 5
         jenkins: 
           securityRealm: 
             oic:
@@ -41,15 +87,16 @@ controller:
           - {{ jenkins_url }}
         secretName: "jenkins-server-tls-secret"
   installPlugins:
-    - kubernetes:4295.v7fa_01b_309c95
+    - kubernetes:4306.vc91e951ea_eb_d
     - workflow-aggregator:600.vb_57cdd26fdd7
-    - git:5.6.0
-    - configuration-as-code:1887.v9e47623cb_043
-    - github-oauth:621.v33b_4394dda_4d
-    - blueocean:1.27.16
+    - git:5.7.0
+    - configuration-as-code:1915.vcdd0a_d0d2625
     - matrix-auth:3.2.3
-    - oic-auth:4.444.vd4c54f157201
-    - github:1.40.0
+    - oic-auth:4.457.v8d7c72676cfe 
+    - github:1.41.0
+    - build-discarder:158.vce570d01ce4c
+    - build-timeout:1.35
+    - hashicorp-vault-plugin:371.v884a_4dd60fb_6
 
 serviceAccount:
   create: false

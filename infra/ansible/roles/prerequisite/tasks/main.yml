@@ -44,6 +44,7 @@
       - gcc 
       - libssl-dev
       - apache2-utils
+      - gnupg
 
 - name: Install python package
   pip:
@@ -59,3 +60,19 @@
     remote_src: true
   args:
     creates: /usr/local/bin/helm
+
+- name: Add HashiCorp GPG key
+  apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+
+- name: Add HashiCorp APT repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_facts['distribution_release'] }} main"
+    state: present
+
+- name: Install Vault
+  apt:
+    name: vault
+    state: present
+    update_cache: true

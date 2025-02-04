@@ -1,0 +1,46 @@
+---
+- name: Configure vault
+  environment:
+    VAULT_ADDR: "https://{{ vault_url }}"
+    VAULT_TOKEN: "{{ lookup('env', 'VAULT_TOKEN') | mandatory }}"
+  vars:
+    policy: "jenkins"
+    role: "jenkins"
+  block:
+    - name: Enable kubernetes auth
+      command:
+        cmd: "vault auth enable kubernetes"
+      ignore_errors: true
+
+    - name: Configure Kubernetes auth
+      command:
+        cmd: >
+          vault write auth/kubernetes/config
+          kubernetes_host="https://kubernetes.default"
+
+    - name: Create a policy
+      shell:
+        cmd: |
+          vault policy write {{ policy }} -<<EOF
+          path "secret/data/docker/config" {
+            capabilities = ["read", "list"]
+          }
+          EOF
+
+    - name: Add a role to Kubernetes auth
+      command:
+        cmd: >
+          vault write auth/kubernetes/role/{{ role }}
+          bound_service_account_names="vault-serviceaccount"
+          bound_service_account_namespaces="{{ jenkins_namespace }}"
+          token_policies="{{ policy }}"
+
+    - name: Enable KV secrets engine
+      command:
+        cmd: "vault secrets enable -path=secret kv"
+      ignore_errors: true
+
+    - name: Write a key-value pair
+      command:
+        cmd: >
+          vault kv put secret/docker/config auth="{{ lookup('env', 'DOCKER_AUTH') | mandatory }}"

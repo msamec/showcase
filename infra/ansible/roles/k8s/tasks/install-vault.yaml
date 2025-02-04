@@ -1,0 +1,39 @@
+---
+- name: Install vault
+  block:
+    - name: Add vault chart repo
+      kubernetes.core.helm_repository:
+        name: hashicorp
+        repo_url: "https://helm.releases.hashicorp.com"
+
+    - name: Install Vault ServiceAccount
+      kubernetes.core.k8s:
+        state: present
+        definition: "{{ lookup('template', 'vault-sa.yaml.j2') | from_yaml_all }}"
+        namespace: "{{ jenkins_namespace }}"
+ 
+    - name: Install vault
+      kubernetes.core.helm:
+        name: vault
+        chart_ref: hashicorp/vault
+        wait: true
+        release_namespace: "{{ vault_namespace }}"
+        create_namespace: true
+        values: "{{ lookup('template', 'vault-values.yaml.j2') | from_yaml }}"
+
+    - name: Initialise Vault operator
+      shell: vault operator init -key-shares=1 -key-threshold=1 -format json
+      environment:
+        VAULT_ADDR: "https://{{ vault_url }}"
+      register: vault_init_results
+
+    - name: Parse output of vault init
+      set_fact:
+        vault_init_parsed: "{{ vault_init_results.stdout | from_json }}"
+
+    - name: Unseal vault with unseal keys
+      shell: |
+        vault operator unseal {{ item }}
+      environment:
+        VAULT_ADDR: "https://{{ vault_url }}"
+      with_items: "{{ vault_init_parsed.unseal_keys_b64 }}"

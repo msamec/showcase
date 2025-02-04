@@ -17,7 +17,7 @@
         state: present
         definition: "{{ lookup('template', 'jenkins-sa.yaml.j2') | from_yaml_all }}"
         namespace: "{{ jenkins_namespace }}"
-
+ 
     - name: Install jenkins
       kubernetes.core.helm:
         name: jenkins

@@ -1,0 +1,14 @@
+server:
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: showcase
+    ingressClassName: "nginx"
+    hosts:
+      - host: {{ vault_url }}
+    tls:
+      - secretName: vault-server-tls-secret
+        hosts:
+          - {{ vault_url }}
+  dataStorage:
+    storageClass: local-path

@@ -72,6 +72,8 @@ export default function Home() {
             <li><strong>Cert-Manager</strong>: For managing SSL/TLS certificates.</li>
             <li><strong>Sealed Secrets</strong>: For securely managing secrets.</li>
           </ul>
+          <li><strong>Kaniko</strong>: For building docker images inside k8s.</li>
+          <li><strong>HashiCorp Vault</strong>: For managing secrets.</li>
           <li><strong>Helm</strong>: For managing Kubernetes applications.</li>
           <li><strong>Ansible</strong>: For automating configuration management and application deployment.</li>
           <li><strong>ArgoCD</strong>: For continuous deployment and managing GitOps workflows.</li>

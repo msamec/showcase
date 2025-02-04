@@ -55,3 +55,8 @@ admin_password: "{{ lookup('env', 'ADMIN_USER_PASSWORD') | mandatory }}"
 public_user_username: public
 public_user_password: "{{ lookup('env', 'PUBLIC_USER_PASSWORD') | mandatory }}"
 
+github_token: "{{ lookup('env', 'GITHUB_TOKEN') | mandatory }}"
+registry_secret_name: "ghcr-secret"
+
+vault_url: vault.samec.dev
+vault_namespace: "secret"

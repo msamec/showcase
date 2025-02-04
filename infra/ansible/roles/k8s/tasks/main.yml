@@ -29,6 +29,16 @@
   tags: 
     - install-keycloak
 
+- name: Install hashicorp vault
+  import_tasks: install-vault.yaml
+  tags: 
+    - install-vault
+
+- name: Configure hashicorp vault
+  import_tasks: configure-vault.yaml
+  tags: 
+    - configure-vault
+
 - name: Install ArgoCD
   import_tasks: install-argocd.yml
   tags: 
