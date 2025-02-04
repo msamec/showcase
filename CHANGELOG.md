@@ -1,3 +1,12 @@
+# [0.4.0](https://github.com/msamec/showcase/compare/v0.3.1...v0.4.0) (2025-02-04)
+
+
+### Features
+
+* add hashicorp vault ([6319b7c](https://github.com/msamec/showcase/commit/6319b7c006cc57ea6602d4eb950ef38d342a160f))
+
+
+
 ## [0.3.1](https://github.com/msamec/showcase/compare/v0.3.0...v0.3.1) (2025-01-14)
 
 
