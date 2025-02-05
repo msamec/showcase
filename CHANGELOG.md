@@ -1,3 +1,7 @@
+## [0.4.1](https://github.com/msamec/showcase/compare/v0.4.0...v0.4.1) (2025-02-05)
+
+
+
 # [0.4.0](https://github.com/msamec/showcase/compare/v0.3.1...v0.4.0) (2025-02-04)
 
 
